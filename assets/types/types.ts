@@ -23,6 +23,15 @@ export type petType = {
   medical_events: medicalEventType[];
 };
 
+// export type userType = {
+//   id: string;
+//   name: string;
+//   sirname: string;
+//   email: string;
+//   password: string;
+//   photo: string;
+//   pets: petType[];
+// };
 // type petsType = petType[];
 
 export type RootStackParamList = {

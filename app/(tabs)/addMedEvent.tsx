@@ -103,7 +103,8 @@ export default function AddMedEvent() {
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>
-            Add {categoryName} {categoryName === 'other' ? 'event ' : ''}for {petName}
+            Add {categoryName} {categoryName === "other" ? "event " : ""}for{" "}
+            {petName}
           </Text>
 
           <View style={styles.inputContainer}>
@@ -181,6 +182,7 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 80,
     backgroundColor: "#d0ecf5",
+    color: "#333",
   },
   title: {
     fontSize: 28,
@@ -246,5 +248,5 @@ const styles = StyleSheet.create({
     height: 120,
     textAlignVertical: "top",
     paddingTop: 12,
-  }
+  },
 });
