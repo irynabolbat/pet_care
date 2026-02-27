@@ -1,6 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -14,6 +15,8 @@ import {
 } from "react-native";
 
 export default function SignUpScreen() {
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,6 +27,11 @@ export default function SignUpScreen() {
       Alert.alert("Error", "Fill all fields");
       return;
     }
+    if (password.length < 6) {
+      Alert.alert("Error! The password should have minimum 6 symbols");
+      return;
+    }
+
     try {
       await signUp(name, email, password);
     } catch (error: any) {
@@ -105,6 +113,14 @@ export default function SignUpScreen() {
               ) : (
                 <ThemedText style={styles.loginButtonText}>Sign up</ThemedText>
               )}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => router.push("/login")}>
+              <ThemedText
+                style={{ textAlign: "center", marginTop: 20, color: "#3a92c9" }}
+              >
+                If you already have an account, log in
+              </ThemedText>
             </TouchableOpacity>
           </ThemedView>
         </ScrollView>

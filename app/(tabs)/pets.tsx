@@ -10,51 +10,60 @@ import {
 } from "react-native";
 
 export default function Pets() {
-	const { pets, loading } = usePetContext();
+  const { pets, loading } = usePetContext();
   const router = useRouter();
 
-	function getNoPhotoImage(type: string) {
-		const normalizedType = type.toLowerCase();
-	
-		if (normalizedType === 'cat') {
-			return require('../../assets/images/no-photo-cat.png');
-		} else if (normalizedType === 'dog') {
-			return require('../../assets/images/no-photo-dog.png');
-		} else {
-			return require('../../assets/images/no-photo.png');
-		}
-	}
-	
+  function getNoPhotoImage(type: string) {
+    const normalizedType = type.toLowerCase();
+
+    if (normalizedType === "cat") {
+      return require("../../assets/images/no-photo-cat.png");
+    } else if (normalizedType === "dog") {
+      return require("../../assets/images/no-photo-dog.png");
+    } else {
+      return require("../../assets/images/no-photo.png");
+    }
+  }
+
   return (
     <View style={[styles.container, { flex: 1 }]}>
       <FlatList
         data={pets}
-        keyExtractor={(pet) => pet.id.toString()}
-				renderItem={({ item }) => (
-					<TouchableOpacity
-						onPress={() =>
-							router.push({ pathname: "/petInfo", params: { petId: item.id } })
-						}
-						style={styles.petItemWrapper}
-					>
-						<View style={styles.photoWrapper}>
-							{item.photo
-								? <Image source={item.photo} style={styles.photo} />
-								: <Image source={getNoPhotoImage(item.type)} style={styles.photo} />
-							}
-						</View>
-						<Text style={styles.name}>{item.name}</Text>
-						<Text style={styles.type}>{item.type}</Text>
-					</TouchableOpacity>
-				)}
+        keyExtractor={(pet) => pet._id?.toString() || Math.random().toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            onPress={() =>
+              router.push({ pathname: "/petInfo", params: { petId: item._id } })
+            }
+            style={styles.petItemWrapper}
+          >
+            <View style={styles.photoWrapper}>
+              {item.photo ? (
+                <Image
+                  source={item.photo}
+                  style={styles.photo}
+                  cachePolicy="disk"
+                />
+              ) : (
+                <Image
+                  source={getNoPhotoImage(item.type)}
+                  style={styles.photo}
+                />
+              )}
+            </View>
+            <Text style={styles.name}>{item.name}</Text>
+            <Text style={styles.type}>{item.type}</Text>
+          </TouchableOpacity>
+        )}
         ListEmptyComponent={
-					<View style={styles.listEmptyContainer}>
-						{loading 
-							? <Text style={styles.listEmptyText}>Wait a little bit🙏</Text> 
-							: <Text style={styles.listEmptyText}>There are no pets yet😿</Text>
-						}
-					</View>
-				}
+          <View style={styles.listEmptyContainer}>
+            {loading ? (
+              <Text style={styles.listEmptyText}>Wait a little bit🙏</Text>
+            ) : (
+              <Text style={styles.listEmptyText}>There are no pets yet😿</Text>
+            )}
+          </View>
+        }
         ListFooterComponent={
           <TouchableOpacity
             style={styles.addButton}
@@ -73,7 +82,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-		paddingTop: 80,
+    paddingTop: 80,
     backgroundColor: "#d0ecf5",
   },
   petItemWrapper: {
@@ -130,17 +139,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
   },
-	listEmptyContainer: {
-		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
-		height: 300,
-		paddingHorizontal: 20,
-	},
-	listEmptyText: {
-		fontSize: 28,
-		color: "#555",
-		fontWeight: "600",
-		textAlign: "center",
-	},
+  listEmptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: 300,
+    paddingHorizontal: 20,
+  },
+  listEmptyText: {
+    fontSize: 28,
+    color: "#555",
+    fontWeight: "600",
+    textAlign: "center",
+  },
 });

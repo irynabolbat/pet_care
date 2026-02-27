@@ -1,5 +1,5 @@
 export type eventType = {
-  id: string;
+  _id: string;
   medical_event_id: string;
   event_name: string;
   date: string;
@@ -8,31 +8,20 @@ export type eventType = {
 };
 
 export type medicalEventType = {
-  id: string;
+  _id: string;
   animal_id: string;
   category_name: string;
   event_details: eventType[];
 };
 
 export type petType = {
-  id: string;
+  _id: string;
   name: string;
   type: string;
   photo: string;
   birth_date: string;
   medical_events: medicalEventType[];
 };
-
-// export type userType = {
-//   id: string;
-//   name: string;
-//   sirname: string;
-//   email: string;
-//   password: string;
-//   photo: string;
-//   pets: petType[];
-// };
-// type petsType = petType[];
 
 export type RootStackParamList = {
   Home: undefined;

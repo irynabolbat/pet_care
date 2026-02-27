@@ -1,13 +1,13 @@
 import DateTimePicker, {
-	DateTimePickerEvent,
+  DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import {
-	Modal,
-	Platform,
-	StyleSheet,
-	Text,
-	TouchableOpacity,
-	View,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 type DatePickerProps = {
@@ -16,7 +16,8 @@ type DatePickerProps = {
   onChange: (date: Date) => void;
   onCancel: () => void;
   onConfirm: () => void;
-	maximumDate?: Date;
+  maximumDate?: Date;
+  minimumDate?: Date;
 };
 
 export default function DatePicker({
@@ -25,14 +26,18 @@ export default function DatePicker({
   onChange,
   onCancel,
   onConfirm,
-	maximumDate,
+  maximumDate,
+  minimumDate,
 }: DatePickerProps) {
+  const isDateValid = date instanceof Date && !isNaN(date.getTime());
+  const safeDate = isDateValid ? date : new Date();
+
   const handleChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     if (event.type === "set" && selectedDate) {
-      // Устанавливаем время на 12:00, чтобы избежать сдвига даты
       selectedDate.setHours(12, 0, 0, 0);
       onChange(selectedDate);
     }
+
     if (Platform.OS === "android") {
       event.type === "set" ? onConfirm() : onCancel();
     }
@@ -51,24 +56,25 @@ export default function DatePicker({
             <DateTimePicker
               mode="date"
               display="spinner"
-              value={date}
+              value={safeDate}
               onChange={handleChange}
-              themeVariant="dark"
-              maximumDate={maximumDate || new Date()}
-              style={[styles.datePicker, { backgroundColor: "#3a92c9" }]}
+              themeVariant="light"
+              maximumDate={maximumDate}
+              minimumDate={minimumDate}
+              style={styles.datePickerIOS}
             />
             <View style={styles.iosButtons}>
               <TouchableOpacity
                 style={[styles.pickerButton, { backgroundColor: "#eee" }]}
                 onPress={onCancel}
               >
-                <Text>Cancel</Text>
+                <Text style={styles.cancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.pickerButton, { backgroundColor: "#3a92c9" }]}
                 onPress={onConfirm}
               >
-                <Text style={{ color: "#fff" }}>Confirm</Text>
+                <Text style={styles.confirmText}>Confirm</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -82,9 +88,10 @@ export default function DatePicker({
       <DateTimePicker
         mode="date"
         display="default"
-        value={date}
+        value={safeDate}
         onChange={handleChange}
         maximumDate={maximumDate}
+        minimumDate={minimumDate}
       />
     )
   );
@@ -99,27 +106,41 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "#fff",
-    borderRadius: 20,
+    borderRadius: 25,
     padding: 20,
+    width: "85%",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  datePicker: {
+  datePickerIOS: {
     height: 200,
-    marginBottom: 10,
-    backgroundColor: "#e6f2f8",
-    borderRadius: 10,
+    width: 300,
   },
   iosButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginTop: 10,
+    width: "100%",
+    marginTop: 15,
   },
   pickerButton: {
     flex: 1,
     alignItems: "center",
-    padding: 12,
-    borderRadius: 12,
-    marginHorizontal: 10,
+    paddingVertical: 14,
+    borderRadius: 15,
+    marginHorizontal: 8,
+  },
+  cancelText: {
+    color: "#555",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  confirmText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

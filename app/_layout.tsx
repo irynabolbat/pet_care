@@ -19,27 +19,28 @@ import { AuthProvider, useAuth } from "../context/AuthContext";
 import { PetProvider } from "../context/PetContext";
 
 function RootLayoutNav() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
-    if (!navigationState?.key) return;
+    if (isLoading || !navigationState?.key) return;
 
     const rootSegment = segments[0];
+    const isAuthPage =
+      rootSegment === "login" || rootSegment === "registration";
 
-    if (!user && rootSegment === "(tabs)") {
-      setTimeout(() => {
-        router.replace("/login");
-      }, 1);
-    } else if (
-      user &&
-      (rootSegment === "login" || rootSegment === "registration")
-    ) {
+    if (!user && !isAuthPage) {
+      router.replace("/login");
+    } else if (user && isAuthPage) {
       router.replace("/(tabs)");
     }
-  }, [user, segments, navigationState?.key]);
+  }, [user, segments, navigationState?.key, isLoading]);
+
+  if (isLoading) {
+    return null;
+  }
 
   return (
     <Stack>

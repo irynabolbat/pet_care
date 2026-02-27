@@ -1,4 +1,5 @@
-import { createContext, useContext, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createContext, useContext, useEffect, useState } from "react";
 import { Platform } from "react-native";
 
 type AuthContextType = {
@@ -16,7 +17,23 @@ const API_URL =
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const savedUser = await AsyncStorage.getItem("@user_data");
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
+        }
+      } catch (e) {
+        console.error("Failed to load user", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadUserData();
+  }, []);
 
   const parseError = (data: any, fallback: string) => {
     return data?.error || data?.message || fallback;
@@ -51,24 +68,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+      const data = await response.json();
 
-      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Login failed");
 
-      if (!response.ok) {
-        throw new Error(parseError(data, "Login failed"));
-      }
-
-      if (!data?.user) {
-        throw new Error("Server did not return user");
-      }
-
+      await AsyncStorage.setItem("@user_data", JSON.stringify(data.user));
       setUser(data.user);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signOut = () => setUser(null);
+  const signOut = async () => {
+    await AsyncStorage.removeItem("@user_data");
+    setUser(null);
+  };
 
   return (
     <AuthContext.Provider value={{ user, signIn, signUp, signOut, isLoading }}>
@@ -79,8 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (context === undefined)
     throw new Error("useAuth must be used within an AuthProvider");
-  }
   return context;
 };

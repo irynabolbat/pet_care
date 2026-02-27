@@ -5,157 +5,158 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   Alert,
-  FlatList,
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 import RemoveModal from "@/components/RemoveModal";
 import { formattedDate, getCurrentAge } from "../../assets/utils/dateUtils";
 
+const API_URL =
+  Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000";
+
 export default function PetInfo() {
   const { petId } = useLocalSearchParams();
-  const { setPets } = usePetContext();
+  const { pets, setPets } = usePetContext();
   const [pet, setPet] = useState<petType | null>(null);
   const [confirmVisible, setConfirmVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
-      const fetchPets = async () => {
+      const fetchPetDetails = async () => {
         try {
-          const response = await fetch(
-            `https://api.petcare.cyou/v1/animal/${petId}`
-          );
-  
+          const url = `${API_URL}/api/pets/${petId}`;
+          console.log("Fetching from:", url);
+
+          const response = await fetch(url);
+
           if (!response.ok) {
-            throw new Error("Failed to fetch pet");
+            const text = await response.text();
+            console.error("Server error text:", text);
+            return;
           }
-  
+
           const data = await response.json();
+          console.log("Success! Data received:", data);
           setPet(data);
         } catch (error) {
-          console.error("Error fetching pet:", error);
+          console.error("Network or parsing error:", error);
         }
       };
-  
-      fetchPets();
+
+      if (petId) fetchPetDetails();
     }, [petId])
   );
 
   function getNoPhotoImage(type: string) {
-    const normalizedType = type.toLowerCase();
-
-    if (normalizedType === "cat") {
+    const normalizedType = type?.toLowerCase();
+    if (normalizedType === "cat")
       return require("../../assets/images/no-photo-cat.png");
-    } else if (normalizedType === "dog") {
+    if (normalizedType === "dog")
       return require("../../assets/images/no-photo-dog.png");
-    } else {
-      return require("../../assets/images/no-photo.png");
-    }
+    return require("../../assets/images/no-photo.png");
   }
 
   const handleDelete = async () => {
     try {
-      const response = await fetch(
-        `https://api.petcare.cyou/v1/animal/${petId}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`${API_URL}/api/pets/${petId}`, {
+        method: "DELETE",
+      });
 
-      if (!response.ok) {
-        throw new Error("Failed to delete pet");
-      }
+      if (!response.ok) throw new Error("Failed to delete pet");
 
-      setPets((prevPets) => prevPets.filter((p) => p.id !== pet?.id));
-
+      setPets((prevPets) => prevPets.filter((p) => p._id !== petId));
       setConfirmVisible(false);
-      router.push("/");
+      router.replace("/(tabs)");
     } catch (error) {
       Alert.alert("Error", "Failed to delete pet");
     }
   };
 
+  const medicalCategories = [
+    { id: 1, category_name: "vaccine" },
+    { id: 2, category_name: "prevention" },
+    { id: 3, category_name: "check up" },
+    { id: 4, category_name: "other" },
+  ];
+
+  console.log("Pet details:", pet);
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 50 }}
+    >
       <View style={styles.photoWrapper}>
-        {pet?.photo ? (
-          <Image source={{ uri: pet.photo }} style={styles.photo} />
-        ) : (
-          <Image
-            source={getNoPhotoImage(pet?.type || "")}
-            style={styles.photo}
-          />
-        )}
+        <Image
+          source={
+            pet?.photo ? { uri: pet.photo } : getNoPhotoImage(pet?.type || "")
+          }
+          style={styles.photo}
+        />
 
         <TouchableOpacity
           style={styles.editButton}
           onPress={() =>
-            router.push({ pathname: "/editPet", params: { petId: pet?.id } })
+            router.push({ pathname: "/editPet", params: { petId } })
           }
         >
-          <Feather name="edit-3" size={24} color="#0275d8" />
+          <Feather name="edit-3" size={24} color="#3a92c9" />
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.name}>{pet?.name}</Text>
+      <Text style={styles.name}>{pet?.name || "Loading..."}</Text>
       <Text style={styles.type}>{pet?.type}</Text>
-      <Text style={styles.dob}>
-        Birthday: {formattedDate(pet?.birth_date)} (
-        {getCurrentAge(pet?.birth_date)})
-      </Text>
+      {pet?.birth_date && (
+        <Text style={styles.dob}>
+          Birthday: {formattedDate(pet?.birth_date)} (
+          {getCurrentAge(pet?.birth_date)})
+        </Text>
+      )}
 
-      <Text style={styles.sectionTitle}>Medical Info</Text>
+      <View style={styles.medicalSection}>
+        <Text style={styles.sectionTitle}>Medical Info</Text>
 
-      <FlatList
-        data={[...(pet?.medical_events || [])].sort((a, b) => {
-          const order = ["vaccine", "prevention", "check up", "other"];
-          return (
-            order.indexOf(a.category_name) - order.indexOf(b.category_name)
-          );
-        })}
-        style={styles.list}
-        keyExtractor={(item) => item.id.toString()}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.eventCard}
-            onPress={() =>
-              router.push({
-                pathname: "/categoryInfo",
-                params: {
-                  categoryId: item.id,
-                  petId: pet?.id,
-                  categoryName: item?.category_name,
-                },
-              })
-            }
-          >
-            <Text style={styles.eventType}>
-              {item?.category_name?.charAt(0).toUpperCase() +
-                item?.category_name?.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        )}
-        ListFooterComponent={
-          <TouchableOpacity
-            style={styles.deleteButtonContainer}
-            onPress={() => setConfirmVisible(true)}
-          >
-            <Feather name="trash-2" size={28} color="#d9534f" />
-          </TouchableOpacity>
-        }
-        contentContainerStyle={{ paddingBottom: 100 }}
-      />
+        <View style={styles.grid}>
+          {medicalCategories.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.eventCard}
+              onPress={() =>
+                router.push({
+                  pathname: "/categoryInfo",
+                  params: {
+                    categoryId: item.id,
+                    petId,
+                    categoryName: item.category_name,
+                  },
+                })
+              }
+            >
+              <Text style={styles.eventType}>
+                {item.category_name.charAt(0).toUpperCase() +
+                  item.category_name.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={styles.deleteButtonContainer}
+        onPress={() => setConfirmVisible(true)}
+      >
+        <Feather name="trash-2" size={28} color="#d9534f" />
+      </TouchableOpacity>
 
       <RemoveModal
         handleDelete={handleDelete}
-        modalText="Are you sure you want to delete this pet account?"
+        modalText="Are you sure you want to delete this pet?"
         confirmVisible={confirmVisible}
         setConfirmVisible={setConfirmVisible}
       />
@@ -262,5 +263,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
+  },
+  medicalSection: {
+    marginTop: 10,
+    marginBottom: 20,
+    paddingHorizontal: 4,
+  },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginTop: 8,
   },
 });

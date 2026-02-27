@@ -6,7 +6,7 @@ import { StyleSheet, TouchableOpacity } from "react-native";
 import Pets from "./pets";
 
 export default function HomeScreen() {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -27,13 +27,12 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     justifyContent: "flex-start",
     alignItems: "flex-end",
     paddingTop: 40,
     paddingEnd: 20,
     backgroundColor: "#d0ecf5",
-    height: 150,
+    height: 100,
   },
   button: {
     paddingVertical: 14,

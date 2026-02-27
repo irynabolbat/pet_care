@@ -14,8 +14,11 @@ import {
   View,
 } from "react-native";
 
+const API_URL =
+  Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000";
+
 export default function AddMedEvent() {
-  const { petId, petName, categoryId, categoryName } = useLocalSearchParams();
+  const { petId, petName, categoryName } = useLocalSearchParams();
 
   const [name, setName] = useState("");
   const [data, setData] = useState("");
@@ -27,17 +30,6 @@ export default function AddMedEvent() {
   >(null);
   const [tempDate, setTempDate] = useState(new Date());
 
-  const handleDateChange = (date: Date) => {
-    const iso = date.toISOString().split("T")[0];
-    if (showDatePicker === "date") setData(iso);
-    if (showDatePicker === "nextDate") setNextData(iso);
-    setTempDate(date);
-  };
-
-  const handleCancel = () => {
-    setShowDatePicker(null);
-  };
-
   const handleConfirm = () => {
     const iso = tempDate.toISOString().split("T")[0];
     if (showDatePicker === "date") setData(iso);
@@ -46,12 +38,16 @@ export default function AddMedEvent() {
   };
 
   const createEvent = async () => {
+    console.log("Submitting with petId:", petId);
+
     if (!name || !data) {
       alert("Please fill in name and date.");
       return;
     }
 
     const newEvent = {
+      petId: petId,
+      category_name: categoryName,
       event_name: name,
       date: data,
       next_date: nextData,
@@ -59,37 +55,86 @@ export default function AddMedEvent() {
     };
 
     try {
-      const response = await fetch(
-        `https://api.petcare.cyou/v1/event/${categoryId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(newEvent),
-        }
-      );
+      const response = await fetch(`${API_URL}/api/medical`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newEvent),
+      });
+
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error("Failed to save event");
+        throw new Error(result.error || "Failed to save");
       }
 
-      // const data = await response.json();
-      // setEvents((prevPets) => [...prevPets, data]);
       alert("Event saved successfully");
-      setName("");
-      setData("");
-      setNextData("");
-      setNotes("");
-      router.push({
-        pathname: "/categoryInfo",
-        params: { categoryId, petId, categoryName },
-      });
+      router.back();
     } catch (error) {
       console.error("Save failed", error);
-      alert("Error saving event");
+      alert(`Error: ${error}`);
     }
   };
+
+  const getMinDate = () => {
+    if (showDatePicker === "nextDate" && data) {
+      return new Date(data);
+    }
+    return undefined;
+  };
+
+  const getMaxDate = () => {
+    const today = new Date();
+    if (showDatePicker === "date") {
+      return today;
+    }
+    if (showDatePicker === "nextDate") {
+      return new Date(today.setFullYear(today.getFullYear() + 2));
+    }
+    return undefined;
+  };
+
+  const DateField = ({
+    value,
+    placeholder,
+    onPress,
+    onClear,
+  }: {
+    value: string;
+    placeholder: string;
+    onPress: () => void;
+    onClear?: () => void;
+  }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      style={[
+        styles.input,
+        Platform.OS === "web" ? ({ cursor: "pointer" } as any) : {},
+      ]}
+    >
+      <View pointerEvents="none">
+        <Text style={{ color: value ? "#333" : "#7d7c7c", fontSize: 18 }}>
+          {value ? new Date(value).toDateString() : placeholder}
+        </Text>
+
+        {value && onClear ? (
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              onClear();
+            }}
+            style={styles.clearIcon}
+          >
+            <Text
+              style={{ color: "#ff4444", fontSize: 20, fontWeight: "bold" }}
+            >
+              ✕
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <KeyboardAvoidingView
@@ -103,49 +148,39 @@ export default function AddMedEvent() {
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.title}>
-            Add {categoryName} {categoryName === "other" ? "event " : ""}for{" "}
-            {petName}
+            Add {categoryName} for {petName}
           </Text>
 
           <View style={styles.inputContainer}>
             <TextInput
-              placeholder="Med Name"
+              placeholder="Record Name (e.g. Rabies Vaccine)"
               value={name}
               onChangeText={setName}
               style={styles.input}
               placeholderTextColor="#7d7c7c"
             />
 
-            <TouchableOpacity
+            <DateField
+              value={data}
+              placeholder="Event Date"
               onPress={() => {
                 setTempDate(data ? new Date(data) : new Date());
                 setShowDatePicker("date");
               }}
-              style={styles.input}
-            >
-              <Text style={{ color: data ? "#333" : "#7d7c7c", fontSize: 18 }}>
-                {data ? new Date(data).toDateString() : "Select Date"}
-              </Text>
-            </TouchableOpacity>
+            />
 
-            <TouchableOpacity
+            <DateField
+              value={nextData}
+              placeholder="Next Date (Optional)"
               onPress={() => {
                 setTempDate(nextData ? new Date(nextData) : new Date());
                 setShowDatePicker("nextDate");
               }}
-              style={styles.input}
-            >
-              <Text
-                style={{ color: nextData ? "#333" : "#7d7c7c", fontSize: 18 }}
-              >
-                {nextData
-                  ? new Date(nextData).toDateString()
-                  : "Select Next Date"}
-              </Text>
-            </TouchableOpacity>
+              onClear={() => setNextData("")}
+            />
 
             <TextInput
-              placeholder="Notes"
+              placeholder="Notes (Medicine brand, dose, etc.)"
               value={notes}
               onChangeText={setNotes}
               style={[styles.input, styles.notesInput]}
@@ -155,20 +190,17 @@ export default function AddMedEvent() {
           </View>
 
           <TouchableOpacity style={styles.addButton} onPress={createEvent}>
-            <Text style={styles.addButtonText}>Save</Text>
+            <Text style={styles.addButtonText}>Save Record</Text>
           </TouchableOpacity>
 
           <DatePicker
             visible={showDatePicker !== null}
             date={tempDate}
-            onChange={handleDateChange}
-            onCancel={handleCancel}
+            onChange={(d) => setTempDate(d)}
+            onCancel={() => setShowDatePicker(null)}
             onConfirm={handleConfirm}
-            maximumDate={
-              showDatePicker === "date"
-                ? new Date()
-                : new Date(new Date().setFullYear(new Date().getFullYear() + 2))
-            }
+            minimumDate={getMinDate()}
+            maximumDate={getMaxDate()}
           />
         </ScrollView>
       </TouchableWithoutFeedback>
@@ -248,5 +280,9 @@ const styles = StyleSheet.create({
     height: 120,
     textAlignVertical: "top",
     paddingTop: 12,
+  },
+  clearIcon: {
+    padding: 5,
+    marginLeft: 10,
   },
 });

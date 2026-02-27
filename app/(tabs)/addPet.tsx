@@ -1,6 +1,7 @@
 import Avatar from "@/components/Avatar";
 import DatePicker from "@/components/DatePicker";
 import UploadModal from "@/components/UploadModal";
+import { useAuth } from "@/context/AuthContext";
 import { usePetContext } from "@/context/PetContext";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
@@ -15,11 +16,12 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View
+  View,
 } from "react-native";
 
 export default function AddPet() {
   const { setPets } = usePetContext();
+  const { user } = useAuth();
 
   const [image, setImage] = useState<string>("");
   const [name, setName] = useState("");
@@ -37,8 +39,8 @@ export default function AddPet() {
     birthday: string,
     photo: string
   ) => {
-    if (!name || !type || !birthday) {
-      alert("All fields are required");
+    if (!name || !type) {
+      alert("Name and type are required");
       return;
     }
 
@@ -47,32 +49,30 @@ export default function AddPet() {
       type,
       birth_date: birthday,
       photo,
+      ownerId: user?.id,
     };
 
     try {
-      const response = await fetch("https://api.petcare.cyou/v1/animal", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newPet),
-      });
+      const response = await fetch(
+        `${
+          Platform.OS === "android"
+            ? "http://10.0.2.2:3000"
+            : "http://localhost:3000"
+        }/api/pets`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newPet),
+        }
+      );
 
-      if (!response.ok) {
-        throw new Error("Failed to add pet");
-      }
+      if (!response.ok) throw new Error("Failed to add pet");
 
       const data = await response.json();
-      alert("Pet added successfully");
-      setPets((prevPets) => [...prevPets, data]);
-      setName("");
-      setType("");
-      setBirthday("");
-      setDate(new Date());
-      setImage("");
-			router.push("/");
+      setPets((prev) => [...prev, data]);
+      router.push("/");
     } catch (error) {
-      console.error("Error adding pet:", error);
+      console.error(error);
     }
   };
 
@@ -94,12 +94,13 @@ export default function AddPet() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 1,
+        quality: 0.5,
+        base64: true,
       });
 
       if (!result.canceled) {
-        const uri = result.assets[0].uri;
-        setImage(uri);
+        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setImage(base64Image);
       }
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -157,16 +158,15 @@ export default function AddPet() {
 
             {showDatePicker && (
               <DatePicker
-              visible={showDatePicker}
-              date={date}
-              onChange={(newDate) => setDate(newDate)}
-              onCancel={toggleDatePicker}
-              onConfirm={() => {
-                setBirthday(date.toISOString().split("T")[0]);
-                toggleDatePicker();
-              }}
-              
-            />
+                visible={showDatePicker}
+                date={date}
+                onChange={(newDate) => setDate(newDate)}
+                onCancel={toggleDatePicker}
+                onConfirm={() => {
+                  setBirthday(date.toISOString().split("T")[0]);
+                  toggleDatePicker();
+                }}
+              />
             )}
           </View>
 

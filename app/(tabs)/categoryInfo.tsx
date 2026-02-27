@@ -1,87 +1,89 @@
-import { medicalEventType } from "@/assets/types/types";
+import { eventType } from "@/assets/types/types";
 import { formattedDate } from "@/assets/utils/dateUtils";
 import { usePetContext } from "@/context/PetContext";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FlatList,
-  ScrollView,
+  Platform,
   StyleSheet,
   Text,
-  TouchableOpacity
+  TouchableOpacity,
+  View,
 } from "react-native";
 
+const API_URL =
+  Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000";
+
 export default function CategoryInfo() {
-  const { categoryId } = useLocalSearchParams();
+  const { petId, categoryName } = useLocalSearchParams();
   const { pets } = usePetContext();
-  const [category, setCategory] = useState<medicalEventType | null>(null);
+  const [events, setEvents] = useState<eventType[]>([]);
+
+  const pet = useMemo(() => pets.find((p) => p._id === petId), [pets, petId]);
 
   useEffect(() => {
-    const fetchPets = async () => {
+    const fetchMedicalEvents = async () => {
       try {
         const response = await fetch(
-          `https://api.petcare.cyou/v1/medical_events/${categoryId}`
+          `${API_URL}/api/medical/${petId}/${categoryName}`
         );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch pet");
-        }
+        if (!response.ok) throw new Error("Failed to fetch events");
 
         const data = await response.json();
-        setCategory(data);
+        setEvents(data);
       } catch (error) {
-        console.error("Error fetching pet:", error);
+        console.error("Error fetching medical events:", error);
       }
     };
-    fetchPets();
-  }, [categoryId, category]);
 
-  const pet = pets.filter((pet) => pet.id === category?.animal_id)[0];
+    if (petId && categoryName) fetchMedicalEvents();
+  }, [petId, categoryName]);
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.name}>{pet?.name ?? ""}</Text>
-
+    <View style={styles.container}>
+      <Text style={styles.name}>{pet?.name ?? "Pet's Health"}</Text>
       <Text style={styles.sectionTitle}>
-        {(category?.category_name ?? "").charAt(0).toUpperCase() +
-          (category?.category_name ?? "").slice(1)}
+        {String(categoryName).charAt(0).toUpperCase() +
+          String(categoryName).slice(1)}
       </Text>
 
       <FlatList
-        data={category?.event_details}
-        keyExtractor={(item) => item?.id.toString()}
+        data={events}
+        keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
-          // <View style={styles.eventCard}>
           <TouchableOpacity
             onPress={() =>
               router.push({
                 pathname: "/currentMedEvent",
-                params: { eventId: item.id, categoryId },
+                params: { eventId: item._id, petId },
               })
             }
             style={styles.eventCard}
           >
-            <Text style={styles.eventType}>{item?.event_name}</Text>
-            <Text>
+            <Text style={styles.eventType}>{item.event_name}</Text>
+
+            <View style={styles.row}>
               <Text style={styles.label}>Date: </Text>
-              {formattedDate(item?.date)}
-            </Text>
+              <Text>{formattedDate(item.date)}</Text>
+            </View>
 
-            <Text>
-              <Text style={styles.label}>Next date: </Text>
-              {formattedDate(item?.next_date)}
-            </Text>
+            {item.next_date && (
+              <View style={styles.row}>
+                <Text style={styles.label}>Next date: </Text>
+                <Text>{formattedDate(item.next_date)}</Text>
+              </View>
+            )}
 
-            {item?.notes ? (
-              <Text>
+            {item.notes && (
+              <Text style={styles.notes} numberOfLines={2}>
                 <Text style={styles.label}>Notes: </Text>
-                {item?.notes}
+                {item.notes}
               </Text>
-            ) : null}
-            {/* </View> */}
+            )}
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>No events yet</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>No records found</Text>}
         ListFooterComponent={
           <TouchableOpacity
             style={styles.addButton}
@@ -89,20 +91,18 @@ export default function CategoryInfo() {
               router.push({
                 pathname: "/addMedEvent",
                 params: {
-                  petId: pet?.id,
-                  petName: pet?.name,
-                  categoryId,
-                  categoryName: category?.category_name,
+                  petId: pet?._id,
+                  categoryName: categoryName,
                 },
               })
             }
           >
-            <Text style={styles.addButtonText}>Add Record</Text>
+            <Text style={styles.addButtonText}>+ Add Record</Text>
           </TouchableOpacity>
         }
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 50 }}
       />
-    </ScrollView>
+    </View>
   );
 }
 
@@ -118,56 +118,60 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#333",
     marginTop: 40,
-    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "600",
     textAlign: "center",
-    color: "#444",
-    marginVertical: 20,
+    color: "#555",
+    marginBottom: 20,
   },
   eventCard: {
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
+    elevation: 3,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowRadius: 4,
   },
   eventType: {
     fontSize: 18,
+    fontWeight: "700",
+    color: "#3a92c9",
+    marginBottom: 8,
+  },
+  row: {
+    flexDirection: "row",
+    marginBottom: 4,
+  },
+  label: {
     fontWeight: "600",
-    color: "#333",
-    marginBottom: 6,
+    color: "#444",
+  },
+  notes: {
+    marginTop: 4,
+    color: "#666",
+    fontStyle: "italic",
   },
   empty: {
     textAlign: "center",
     color: "#999",
+    marginTop: 40,
     fontSize: 16,
-    marginTop: 30,
   },
   addButton: {
     backgroundColor: "#3a92c9",
     paddingVertical: 16,
     borderRadius: 25,
     alignItems: "center",
-    marginTop: 30,
-    shadowColor: "#3a92c9",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 10,
+    marginTop: 20,
   },
   addButtonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "700",
-  },
-  label: {
-    fontWeight: "600",
   },
 });
