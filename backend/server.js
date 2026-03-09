@@ -2,13 +2,13 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
+const path = require("path");
 
 const app = express();
 
 app.use(cors({ origin: "*" }));
 app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const MONGO_URI =
@@ -115,25 +115,25 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// app.post("/api/pets", async (req, res) => {
-//   try {
-//     const { name, type, birth_date, photo, ownerId } = req.body;
+app.post("/api/pets", async (req, res) => {
+  try {
+    const { name, type, birth_date, photo, ownerId } = req.body;
 
-//     const newPet = new Pet({
-//       name,
-//       type,
-//       birth_date,
-//       photo,
-//       owner: ownerId
-//     });
+    const newPet = new Pet({
+      name,
+      type,
+      birth_date,
+      photo,
+      owner: ownerId
+    });
 
-//     await newPet.save();
-//     res.status(201).json(newPet);
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ error: "Failed to add pet" });
-//   }
-// });
+    await newPet.save();
+    res.status(201).json(newPet);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to add pet" });
+  }
+});
 
 app.get("/api/pets/mine/:userId", async (req, res) => {
   try {

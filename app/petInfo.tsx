@@ -15,7 +15,7 @@ import {
 } from "react-native";
 
 import RemoveModal from "@/components/RemoveModal";
-import { formattedDate, getCurrentAge } from "../../assets/utils/dateUtils";
+import { formattedDate, getCurrentAge } from "../assets/utils/dateUtils";
 
 const API_URL =
   Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000";
@@ -56,10 +56,10 @@ export default function PetInfo() {
   function getNoPhotoImage(type: string) {
     const normalizedType = type?.toLowerCase();
     if (normalizedType === "cat")
-      return require("../../assets/images/no-photo-cat.png");
+      return require("../assets/images/no-photo-cat.png");
     if (normalizedType === "dog")
-      return require("../../assets/images/no-photo-dog.png");
-    return require("../../assets/images/no-photo.png");
+      return require("../assets/images/no-photo-dog.png");
+    return require("../assets/images/no-photo.png");
   }
 
   const handleDelete = async () => {
@@ -234,8 +234,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#3a92c9",
     borderRadius: 25,
     paddingVertical: 35,
-    marginHorizontal: 5,
-    flex: 1,
+    width: "48%",
+    marginBottom: 12,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#3a92c9",

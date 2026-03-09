@@ -3,7 +3,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
 import { StyleSheet, TouchableOpacity } from "react-native";
-import Pets from "./pets";
+import Pets from "../pets";
 
 export default function HomeScreen() {
   const { signOut } = useAuth();

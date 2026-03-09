@@ -17,11 +17,11 @@ export default function Pets() {
     const normalizedType = type.toLowerCase();
 
     if (normalizedType === "cat") {
-      return require("../../assets/images/no-photo-cat.png");
+      return require("../assets/images/no-photo-cat.png");
     } else if (normalizedType === "dog") {
-      return require("../../assets/images/no-photo-dog.png");
+      return require("../assets/images/no-photo-dog.png");
     } else {
-      return require("../../assets/images/no-photo.png");
+      return require("../assets/images/no-photo.png");
     }
   }
 
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 80,
+    paddingTop: 20,
     backgroundColor: "#d0ecf5",
   },
   petItemWrapper: {

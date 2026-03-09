@@ -1,5 +1,6 @@
 import { formattedDate } from "@/assets/utils/dateUtils";
 import RemoveModal from "@/components/RemoveModal";
+import { scheduleReminder } from "@/components/scheduleReminder";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
@@ -33,6 +34,10 @@ export default function CurrentMedEvent() {
 
           const data = await response.json();
           setCurEvent(data);
+
+          if (data.next_date) {
+            await scheduleReminder(data.event_name, data.next_date);
+          }
         } catch (error) {
           console.error("Error fetching event:", error);
         }
@@ -40,7 +45,6 @@ export default function CurrentMedEvent() {
       if (eventId) fetchEvent();
     }, [eventId])
   );
-
   const handleDelete = async () => {
     try {
       const response = await fetch(`${API_URL}/api/medical-event/${eventId}`, {
@@ -150,7 +154,6 @@ const styles = StyleSheet.create({
     color: "#444",
   },
   notesContainer: {
-    marginTop: 10,
     backgroundColor: "#fff",
     padding: 15,
     borderRadius: 12,

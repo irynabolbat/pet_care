@@ -74,6 +74,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       await AsyncStorage.setItem("@user_data", JSON.stringify(data.user));
       setUser(data.user);
+    } catch (error) {
+      throw new Error("Cannot connect to server");
     } finally {
       setIsLoading(false);
     }
