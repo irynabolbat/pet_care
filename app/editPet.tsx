@@ -1,3 +1,4 @@
+import { getValidDate } from "@/assets/utils/getValidDate";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -33,17 +34,14 @@ export default function EditPet() {
   const [editImage, setEditImage] = useState("");
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const toggleDatePicker = () => setShowDatePicker(!showDatePicker);
+  const [tempDate, setTempDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     const fetchPetData = async () => {
       try {
-        console.log("Fetching pet for edit:", petId);
         const response = await fetch(`${API_URL}/api/pets/${petId}`);
-
         if (!response.ok) throw new Error("Failed to fetch pet details");
 
         const data = await response.json();
@@ -54,7 +52,7 @@ export default function EditPet() {
         setEditImage(data.photo || "");
 
         if (data.birth_date) {
-          setDate(new Date(data.birth_date));
+          setTempDate(getValidDate(data.birth_date));
         }
       } catch (error) {
         console.error("Error fetching pet for edit:", error);
@@ -64,6 +62,12 @@ export default function EditPet() {
 
     if (petId) fetchPetData();
   }, [petId]);
+
+  const handleConfirmDate = () => {
+    const iso = tempDate.toISOString().split("T")[0];
+    setEditBirthday(iso);
+    setShowDatePicker(false);
+  };
 
   const savePetChanges = async () => {
     if (!editName.trim() || !editType.trim()) {
@@ -88,7 +92,6 @@ export default function EditPet() {
       if (!response.ok) throw new Error("Failed to update pet");
 
       const updatedPet = await response.json();
-
       setPets((prev) => prev.map((p) => (p._id === petId ? updatedPet : p)));
 
       Alert.alert("Success", "Pet info updated!");
@@ -111,9 +114,12 @@ export default function EditPet() {
         return;
       }
 
-      const result = await (mode === "camera"
-        ? ImagePicker.launchCameraAsync
-        : ImagePicker.launchImageLibraryAsync)({
+      const launchMethod =
+        mode === "camera"
+          ? ImagePicker.launchCameraAsync
+          : ImagePicker.launchImageLibraryAsync;
+
+      const result = await launchMethod({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
@@ -154,6 +160,7 @@ export default function EditPet() {
               onChangeText={setEditName}
               style={styles.input}
               placeholder="Pet Name"
+              placeholderTextColor="#7d7c7c"
             />
 
             <Text style={styles.label}>Species</Text>
@@ -162,12 +169,16 @@ export default function EditPet() {
               onChangeText={setEditType}
               style={styles.input}
               placeholder="Dog"
+              placeholderTextColor="#7d7c7c"
             />
 
             <Text style={styles.label}>Birthday</Text>
             <TouchableOpacity
-              onPress={toggleDatePicker}
-              style={styles.dateInput}
+              onPress={() => {
+                setTempDate(getValidDate(editBirthday));
+                setShowDatePicker(true);
+              }}
+              style={[styles.input, { justifyContent: "center" }]}
             >
               <Text
                 style={{
@@ -176,35 +187,15 @@ export default function EditPet() {
                 }}
               >
                 {editBirthday
-                  ? new Date(editBirthday).toLocaleDateString()
-                  : "Select date"}
+                  ? new Date(editBirthday).toDateString()
+                  : "Select Birthday"}
               </Text>
             </TouchableOpacity>
-
-            {showDatePicker && (
-              <DatePicker
-                visible={showDatePicker}
-                date={date}
-                onChange={(newDate) => setDate(newDate)}
-                onCancel={toggleDatePicker}
-                onConfirm={() => {
-                  setEditBirthday(date.toISOString().split("T")[0]);
-                  toggleDatePicker();
-                }}
-              />
-            )}
           </View>
 
           <View style={styles.actionButtons}>
             <TouchableOpacity
-              style={[
-                styles.button,
-                {
-                  backgroundColor: "#fff",
-                  borderWidth: 1,
-                  borderColor: "#3a92c9",
-                },
-              ]}
+              style={[styles.button, styles.cancelButton]}
               onPress={() => router.back()}
             >
               <Text style={[styles.buttonText, { color: "#3a92c9" }]}>
@@ -213,12 +204,20 @@ export default function EditPet() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: "#3a92c9" }]}
+              style={[styles.button, styles.saveButton]}
               onPress={savePetChanges}
             >
               <Text style={styles.buttonText}>Save Changes</Text>
             </TouchableOpacity>
           </View>
+
+          <DatePicker
+            visible={showDatePicker}
+            date={tempDate}
+            onChange={(newDate) => setTempDate(newDate)}
+            onCancel={() => setShowDatePicker(false)}
+            onConfirm={handleConfirmDate}
+          />
 
           <UploadModal
             modalVisible={modalVisible}
@@ -240,7 +239,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 60,
     backgroundColor: "#d0ecf5",
   },
   title: {
@@ -261,17 +260,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#333",
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
-  },
-  dateInput: {
-    height: 55,
-    justifyContent: "center",
-    marginBottom: 20,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
+    borderColor: "#bbb",
   },
   actionButtons: {
     flexDirection: "row",
@@ -285,7 +274,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 25,
-    elevation: 2,
+    elevation: 4,
   },
+  cancelButton: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#3a92c9",
+  },
+  saveButton: { backgroundColor: "#3a92c9" },
   buttonText: { fontSize: 18, fontWeight: "700", color: "#fff" },
 });

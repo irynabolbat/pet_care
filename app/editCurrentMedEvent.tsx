@@ -1,3 +1,4 @@
+import { getValidDate } from "@/assets/utils/getValidDate";
 import DatePicker from "@/components/DatePicker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -38,10 +39,11 @@ export default function EditCurrentMedEvent() {
 
         const data = await response.json();
         setEditEventName(data.event_name);
-        setEditDate(data.date);
+        setEditDate(data.date || "");
         setEditNextData(data.next_date || "");
         setEditNotes(data.notes || "");
-        if (data.date) setTempDate(new Date(data.date));
+
+        setTempDate(getValidDate(data.date));
       } catch (error) {
         console.error("Error fetching event:", error);
       }
@@ -77,7 +79,6 @@ export default function EditCurrentMedEvent() {
       });
 
       if (!response.ok) throw new Error("Failed to edit event");
-
       alert("Changes saved successfully");
       router.back();
     } catch (error) {
@@ -90,7 +91,7 @@ export default function EditCurrentMedEvent() {
     value,
     label,
     onPress,
-    onClear, // Добавляем новый проп
+    onClear,
   }: {
     value: string;
     label: string;
@@ -100,19 +101,11 @@ export default function EditCurrentMedEvent() {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
-      style={[
-        styles.input,
-        {
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-        },
-        Platform.OS === "web" ? ({ cursor: "pointer" } as any) : {},
-      ]}
+      style={styles.inputRow}
     >
-      <View pointerEvents="none">
+      <View style={{ flex: 1 }} pointerEvents="none">
         <Text style={{ color: value ? "#333" : "#7d7c7c", fontSize: 18 }}>
-          {value ? new Date(value).toDateString() : label}
+          {value ? getValidDate(value).toDateString() : label}
         </Text>
       </View>
 
@@ -122,7 +115,7 @@ export default function EditCurrentMedEvent() {
             e.stopPropagation();
             onClear();
           }}
-          style={{ padding: 10 }}
+          style={styles.clearIcon}
         >
           <Text style={{ fontSize: 22, color: "#999", fontWeight: "bold" }}>
             ✕
@@ -159,7 +152,7 @@ export default function EditCurrentMedEvent() {
               value={editDate}
               label="Select Date"
               onPress={() => {
-                setTempDate(editDate ? new Date(editDate) : new Date());
+                setTempDate(getValidDate(editDate));
                 setShowDatePicker("date");
               }}
             />
@@ -169,7 +162,11 @@ export default function EditCurrentMedEvent() {
               value={editNextData}
               label="Select Next Date"
               onPress={() => {
-                setTempDate(editNextData ? new Date(editNextData) : new Date());
+                if (!editNextData || editNextData === "") {
+                  setTempDate(new Date());
+                } else {
+                  setTempDate(getValidDate(editNextData));
+                }
                 setShowDatePicker("nextDate");
               }}
               onClear={() => setEditNextData("")}
@@ -187,14 +184,7 @@ export default function EditCurrentMedEvent() {
 
           <View style={styles.iosButtons}>
             <TouchableOpacity
-              style={[
-                styles.button,
-                {
-                  backgroundColor: "#fff",
-                  borderWidth: 1,
-                  borderColor: "#3a92c9",
-                },
-              ]}
+              style={[styles.button, styles.cancelButton]}
               onPress={() => router.back()}
             >
               <Text style={[styles.buttonText, { color: "#3a92c9" }]}>
@@ -202,7 +192,7 @@ export default function EditCurrentMedEvent() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.button, { backgroundColor: "#3a92c9" }]}
+              style={[styles.button, styles.confirmButton]}
               onPress={saveEdit}
             >
               <Text style={styles.buttonText}>Confirm</Text>
@@ -210,6 +200,7 @@ export default function EditCurrentMedEvent() {
           </View>
 
           <DatePicker
+            key={showDatePicker}
             visible={showDatePicker !== null}
             date={tempDate}
             onChange={(d) => setTempDate(d)}
@@ -248,6 +239,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     fontSize: 18,
     justifyContent: "center",
+    color: "#333",
+  },
+  inputRow: {
+    height: 55,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#bbb",
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   notesInput: { height: 120, textAlignVertical: "top", paddingTop: 12 },
   iosButtons: {
@@ -264,5 +268,12 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     elevation: 4,
   },
+  cancelButton: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#3a92c9",
+  },
+  confirmButton: { backgroundColor: "#3a92c9" },
   buttonText: { fontSize: 18, fontWeight: "700", color: "#fff" },
+  clearIcon: { padding: 10, marginRight: -5 },
 });

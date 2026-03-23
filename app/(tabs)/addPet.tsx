@@ -1,3 +1,4 @@
+import { getValidDate } from "@/assets/utils/getValidDate";
 import Avatar from "@/components/Avatar";
 import DatePicker from "@/components/DatePicker";
 import UploadModal from "@/components/UploadModal";
@@ -19,6 +20,9 @@ import {
   View,
 } from "react-native";
 
+const API_URL =
+  Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000";
+
 export default function AddPet() {
   const { setPets } = usePetContext();
   const { user } = useAuth();
@@ -30,7 +34,7 @@ export default function AddPet() {
 
   const [modalVisible, setModalVisible] = useState(false);
 
-  const [date, setDate] = useState(new Date());
+  const [tempDate, setTempDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const addPet = async (
@@ -53,18 +57,11 @@ export default function AddPet() {
     };
 
     try {
-      const response = await fetch(
-        `${
-          Platform.OS === "android"
-            ? "http://10.0.2.2:3000"
-            : "http://localhost:3000"
-        }/api/pets`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newPet),
-        }
-      );
+      const response = await fetch(`${API_URL}/api/pets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newPet),
+      });
 
       if (!response.ok) throw new Error("Failed to add pet");
 
@@ -73,6 +70,7 @@ export default function AddPet() {
       router.push("/");
     } catch (error) {
       console.error(error);
+      alert("Error adding pet");
     }
   };
 
@@ -88,9 +86,12 @@ export default function AddPet() {
         return;
       }
 
-      const result = await (mode === "camera"
-        ? ImagePicker.launchCameraAsync
-        : ImagePicker.launchImageLibraryAsync)({
+      const launchMethod =
+        mode === "camera"
+          ? ImagePicker.launchCameraAsync
+          : ImagePicker.launchImageLibraryAsync;
+
+      const result = await launchMethod({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
@@ -109,18 +110,16 @@ export default function AddPet() {
     }
   };
 
-  const removeImage = () => {
-    setImage("");
-    setModalVisible(false);
+  const handleConfirmDate = () => {
+    const iso = tempDate.toISOString().split("T")[0];
+    setBirthday(iso);
+    setShowDatePicker(false);
   };
-
-  const toggleDatePicker = () => setShowDatePicker(!showDatePicker);
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={0}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
@@ -140,34 +139,27 @@ export default function AddPet() {
               placeholderTextColor="#7d7c7c"
             />
             <TextInput
-              placeholder="Pet Type"
+              placeholder="Pet Type (e.g. Dog)"
               value={type}
               onChangeText={setType}
               style={styles.input}
               placeholderTextColor="#7d7c7c"
             />
 
-            <TextInput
-              placeholder="Pet Birthday"
-              value={birthday ? new Date(birthday).toDateString() : ""}
-              editable={false}
-              onPressIn={toggleDatePicker}
-              style={styles.input}
-              placeholderTextColor="#7d7c7c"
-            />
-
-            {showDatePicker && (
-              <DatePicker
-                visible={showDatePicker}
-                date={date}
-                onChange={(newDate) => setDate(newDate)}
-                onCancel={toggleDatePicker}
-                onConfirm={() => {
-                  setBirthday(date.toISOString().split("T")[0]);
-                  toggleDatePicker();
-                }}
-              />
-            )}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                setTempDate(getValidDate(birthday));
+                setShowDatePicker(true);
+              }}
+              style={[styles.input, { justifyContent: "center" }]}
+            >
+              <Text
+                style={{ fontSize: 18, color: birthday ? "#333" : "#7d7c7c" }}
+              >
+                {birthday ? new Date(birthday).toDateString() : "Pet Birthday"}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -177,12 +169,23 @@ export default function AddPet() {
             <Text style={styles.addButtonText}>Save</Text>
           </TouchableOpacity>
 
+          <DatePicker
+            visible={showDatePicker}
+            date={tempDate}
+            onChange={(newDate) => setTempDate(newDate)}
+            onCancel={() => setShowDatePicker(false)}
+            onConfirm={handleConfirmDate}
+          />
+
           <UploadModal
             modalVisible={modalVisible}
             onBackPress={() => setModalVisible(false)}
             onCameraPress={() => uploadImage("camera")}
             onGalleryPress={() => uploadImage("gallery")}
-            onRemovePress={removeImage}
+            onRemovePress={() => {
+              setImage("");
+              setModalVisible(false);
+            }}
           />
         </ScrollView>
       </TouchableWithoutFeedback>
@@ -208,7 +211,7 @@ const styles = StyleSheet.create({
     marginTop: 30,
   },
   input: {
-    height: 50,
+    height: 55,
     marginBottom: 20,
     paddingHorizontal: 16,
     borderWidth: 1,
@@ -224,46 +227,15 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: "center",
     marginTop: 30,
+    elevation: 10,
     shadowColor: "#3a92c9",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
-    elevation: 10,
   },
   addButtonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "700",
-  },
-  datePicker: {
-    height: 200,
-    marginBottom: 10,
-    backgroundColor: "#e6f2f8",
-    borderRadius: 10,
-  },
-  iosButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginTop: 10,
-  },
-  pickerButton: {
-    flex: 1,
-    alignItems: "center",
-    padding: 12,
-    borderRadius: 12,
-    marginHorizontal: 10,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 20,
-    alignItems: "center",
   },
 });

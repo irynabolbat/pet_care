@@ -76,10 +76,93 @@ function RootLayoutNav() {
 
   return (
     <Stack>
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="registration" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="+not-found" />
+      <Stack.Screen
+        name="login"
+        options={{
+          title: "Login",
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="registration"
+        options={{
+          title: "Registration",
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="(tabs)"
+        options={{
+          title: "Your pets",
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="petInfo"
+        options={{
+          title: "Pet info",
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="editPet"
+        options={{
+          title: "Edit profile",
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="addPet"
+        options={{
+          title: "Add pet",
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="categoryInfo"
+        options={{
+          title: "Info",
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="addMedEvent"
+        options={{
+          title: "New event",
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="currentMedEvent"
+        options={{
+          title: "Event",
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="editCurrentMedEvent"
+        options={{
+          title: "Edit event",
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="+not-found"
+        options={{
+          title: "Page not found",
+          headerShown: true,
+        }}
+      />
     </Stack>
   );
 }

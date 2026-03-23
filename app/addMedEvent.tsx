@@ -109,30 +109,37 @@ export default function AddMedEvent() {
       activeOpacity={0.7}
       style={[
         styles.input,
+        {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        },
         Platform.OS === "web" ? ({ cursor: "pointer" } as any) : {},
       ]}
     >
-      <View pointerEvents="none">
+      <View style={{ flex: 1 }} pointerEvents="none">
         <Text style={{ color: value ? "#333" : "#7d7c7c", fontSize: 18 }}>
           {value ? new Date(value).toDateString() : placeholder}
         </Text>
-
-        {value && onClear ? (
-          <TouchableOpacity
-            onPress={(e) => {
-              e.stopPropagation();
-              onClear();
-            }}
-            style={styles.clearIcon}
-          >
-            <Text
-              style={{ color: "#ff4444", fontSize: 20, fontWeight: "bold" }}
-            >
-              ✕
-            </Text>
-          </TouchableOpacity>
-        ) : null}
       </View>
+
+      {value && onClear && (
+        <TouchableOpacity
+          onPress={(e) => {
+            e.stopPropagation();
+            onClear();
+          }}
+          style={{
+            paddingVertical: 10,
+            paddingLeft: 15,
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ fontSize: 22, color: "#999", fontWeight: "bold" }}>
+            ✕
+          </Text>
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 

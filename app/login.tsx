@@ -42,16 +42,11 @@ export default function LoginScreen() {
       return;
     }
 
-    if (password.length < 6) {
-      Alert.alert("Error! The password should have minimum 6 symbols");
-      return;
-    }
-
     try {
       await signIn(email, password);
       router.replace("/");
     } catch (error: any) {
-      Alert.alert("Authorization error", error?.message || "Try again");
+      Alert.alert("Authorization error", "Wrong email or password");
     }
   };
 
