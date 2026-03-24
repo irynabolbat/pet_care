@@ -31,13 +31,13 @@ Notifications.setNotificationHandler({
 });
 
 function RootLayoutNav() {
-  const { user, isLoading } = useAuth();
+  const { user, isInitializing } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const navigationState = useRootNavigationState();
 
   useEffect(() => {
-    if (isLoading || !navigationState?.key) return;
+    if (isInitializing || !navigationState?.key) return;
 
     const rootSegment = segments[0];
     const isAuthPage =
@@ -48,7 +48,7 @@ function RootLayoutNav() {
     } else if (user && isAuthPage) {
       router.replace("/(tabs)");
     }
-  }, [user, segments, navigationState?.key, isLoading]);
+  }, [user, segments, navigationState?.key, isInitializing]);
 
   useEffect(() => {
     registerForPushNotificationsAsync();
@@ -70,7 +70,7 @@ function RootLayoutNav() {
     };
   }, []);
 
-  if (isLoading) {
+  if (isInitializing) {
     return null;
   }
 

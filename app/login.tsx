@@ -19,7 +19,7 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { signIn, isLoading } = useAuth();
+  const { signIn, isAuthLoading } = useAuth();
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,6 +46,7 @@ export default function LoginScreen() {
       await signIn(email, password);
       router.replace("/");
     } catch (error: any) {
+      setPassword("");
       Alert.alert("Authorization error", "Wrong email or password");
     }
   };
@@ -79,7 +80,7 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                editable={!isLoading}
+                editable={!isAuthLoading}
               />
             </ThemedView>
 
@@ -94,19 +95,19 @@ export default function LoginScreen() {
                 secureTextEntry
                 autoCapitalize="none"
                 autoCorrect={false}
-                editable={!isLoading}
+                editable={!isAuthLoading}
               />
             </ThemedView>
 
             <TouchableOpacity
               style={[
                 styles.loginButton,
-                isLoading && styles.loginButtonDisabled,
+                isAuthLoading && styles.loginButtonDisabled,
               ]}
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={isAuthLoading}
             >
-              {isLoading ? (
+              {isAuthLoading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <ThemedText style={styles.loginButtonText}>Login</ThemedText>

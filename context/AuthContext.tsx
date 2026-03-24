@@ -7,7 +7,8 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (name: string, email: string, password: string) => Promise<void>;
   signOut: () => void;
-  isLoading: boolean;
+  isInitializing: boolean;
+  isAuthLoading: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,7 +18,8 @@ const API_URL =
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -29,9 +31,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } catch (e) {
         console.error("Failed to load user", e);
       } finally {
-        setIsLoading(false);
+        setIsInitializing(false);
       }
     };
+
     loadUserData();
   }, []);
 
@@ -40,7 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUp = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
+    setIsAuthLoading(true);
     try {
       const response = await fetch(`${API_URL}/register`, {
         method: "POST",
@@ -56,28 +59,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       await signIn(email, password);
     } finally {
-      setIsLoading(false);
+      setIsAuthLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
-    setIsLoading(true);
+    setIsAuthLoading(true);
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || "Login failed");
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(parseError(data, "Wrong email or password"));
+      }
 
       await AsyncStorage.setItem("@user_data", JSON.stringify(data.user));
       setUser(data.user);
-    } catch (error) {
-      throw new Error("Cannot connect to server");
+    } catch (error: any) {
+      throw new Error(error.message || "Cannot connect to server");
     } finally {
-      setIsLoading(false);
+      setIsAuthLoading(false);
     }
   };
 
@@ -87,7 +93,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, signIn, signUp, signOut, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        signIn,
+        signUp,
+        signOut,
+        isInitializing,
+        isAuthLoading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -95,7 +110,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined)
+  if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
+  }
   return context;
 };
