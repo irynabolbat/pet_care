@@ -1,8 +1,8 @@
 import { eventType } from "@/assets/types/types";
 import { formattedDate } from "@/assets/utils/dateUtils";
 import { usePetContext } from "@/context/PetContext";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import {
   FlatList,
   Platform,
@@ -22,23 +22,27 @@ export default function CategoryInfo() {
 
   const pet = useMemo(() => pets.find((p) => p._id === petId), [pets, petId]);
 
-  useEffect(() => {
-    const fetchMedicalEvents = async () => {
-      try {
-        const response = await fetch(
-          `${API_URL}/api/medical/${petId}/${categoryName}`
-        );
-        if (!response.ok) throw new Error("Failed to fetch events");
+  useFocusEffect(
+    useCallback(() => {
+      const fetchMedicalEvents = async () => {
+        try {
+          const response = await fetch(
+            `${API_URL}/api/medical/${petId}/${categoryName}`
+          );
+          if (!response.ok) throw new Error("Failed to fetch events");
 
-        const data = await response.json();
-        setEvents(data);
-      } catch (error) {
-        console.error("Error fetching medical events:", error);
+          const data = await response.json();
+          setEvents(data);
+        } catch (error) {
+          console.error("Error fetching medical events:", error);
+        }
+      };
+
+      if (petId && categoryName) {
+        fetchMedicalEvents();
       }
-    };
-
-    if (petId && categoryName) fetchMedicalEvents();
-  }, [petId, categoryName]);
+    }, [petId, categoryName])
+  );
 
   return (
     <View style={styles.container}>

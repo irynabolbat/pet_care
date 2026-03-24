@@ -54,10 +54,7 @@ export default function CurrentMedEvent() {
       if (!response.ok) throw new Error("Failed to delete event");
 
       setConfirmVisible(false);
-      router.push({
-        pathname: "/categoryInfo",
-        params: { petId, categoryName },
-      });
+      router.back();
     } catch (error) {
       Alert.alert("Error", "Failed to delete event");
     }
