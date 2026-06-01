@@ -5,15 +5,12 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   FlatList,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-
-const API_URL =
-  Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000";
+import { API_URL } from "@/constants/Api";
 
 export default function CategoryInfo() {
   const { petId, categoryName } = useLocalSearchParams();

@@ -6,7 +6,6 @@ import { useCallback, useState } from "react";
 import {
   Alert,
   Image,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,9 +15,7 @@ import {
 
 import RemoveModal from "@/components/RemoveModal";
 import { formattedDate, getCurrentAge } from "../assets/utils/dateUtils";
-
-const API_URL =
-  Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000";
+import { API_URL } from "@/constants/Api";
 
 export default function PetInfo() {
   const { petId } = useLocalSearchParams();

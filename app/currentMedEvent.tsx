@@ -6,16 +6,13 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   Alert,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-
-const API_URL =
-  Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000";
+import { API_URL } from "@/constants/Api";
 
 export default function CurrentMedEvent() {
   const { eventId, petId, categoryName } = useLocalSearchParams();

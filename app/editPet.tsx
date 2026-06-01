@@ -20,9 +20,7 @@ import Avatar from "@/components/Avatar";
 import DatePicker from "@/components/DatePicker";
 import UploadModal from "@/components/UploadModal";
 import { usePetContext } from "@/context/PetContext";
-
-const API_URL =
-  Platform.OS === "android" ? "http://10.0.2.2:3000" : "http://localhost:3000";
+import { API_URL } from "@/constants/Api";
 
 export default function EditPet() {
   const { petId } = useLocalSearchParams();

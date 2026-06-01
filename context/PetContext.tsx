@@ -1,7 +1,7 @@
 import { petType } from "@/assets/types/types";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Platform } from "react-native";
 import { useAuth } from "./AuthContext";
+import { API_URL } from "@/constants/Api";
 
 type PetContextType = {
   pets: petType[];
@@ -17,10 +17,6 @@ export const PetProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const { user } = useAuth();
 
-  const API_URL =
-    Platform.OS === "android"
-      ? "http://10.0.2.2:3000"
-      : "http://localhost:3000";
 
   const fetchPets = async () => {
     if (!user?.id) {
